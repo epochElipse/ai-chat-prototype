@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Chat Window – Open Side Panel Prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ─────────────────────────────────────────────────────────────
+       DESIGN TOKENS  (from epochElipse/design-system src/tokens.css)
+       ───────────────────────────────────────────────────────────── */
+    :root {
+      /* Primitives */
+      --primitive-neutral-0:   #ffffff;
+      --primitive-slate-100:   #f1f5f9;
+      --primitive-slate-500:   #64748b;
+      --primitive-slate-600:   #475569;
+      --primitive-neutral-700: #404040;
+
+      /* Semantic – bg */
+      --color-bg-default:       #ffffff;
+      --color-bg-default-hover: rgba(0,0,0,0.05);
+      --color-bg-neutral-soft:  #f5f5f5;
+      --color-bg-system-soft:   #f1f5f9;   /* slate-100 */
+      --color-bg-system-highlight: #e0f2fe; /* sky-100   */
+      --color-bg-slate-a10:     rgba(100,116,139,0.10);
+      --color-bg-neutral-dark:  #404040;
+
+      /* Semantic – text */
+      --color-text-default: rgba(0,0,0,0.90);
+      --color-text-subtle:  rgba(0,0,0,0.60);
+      --color-text-system:  #475569;
+      --color-text-invert:  #ffffff;
+
+      /* Semantic – border */
+      --color-border-default: rgba(0,0,0,0.10);
+      --color-border-active:  rgba(0,0,0,0.30);
+      --color-border-focus:   #8b5cf6;
+
+      /* Space */
+      --space-025:  2px;
+      --space-050:  4px;
+      --space-100:  8px;
+      --space-150: 12px;
+      --space-200: 16px;
+      --space-300: 24px;
+
+      /* Size */
+      --size-button-small:   28px;
+      --size-button-medium:  32px;
+      --size-icon-xsmall:    16px;
+      --size-icon-small:     20px;
+      --size-icon-medium:    24px;
+
+      /* Radius */
+      --radius-small:  4px;
+      --radius-medium: 8px;
+      --radius-large:  16px;
+      --radius-full:   9999px;
+
+      /* Border */
+      --border-width-thin: 1px;
+
+      /* Typography */
+      --font-body-sm:     400 14px/1 'Open Sans', sans-serif;
+      --font-body-sm-700: 600 14px/1 'Open Sans', sans-serif;
+      --font-body-md-700: 600 16px/1 'Open Sans', sans-serif;
+      --font-button:      600 14px/1 'Open Sans', sans-serif;
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+       RESET
+       ───────────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Open Sans', sans-serif;
+      background: #dde1e7;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+       ICON  (matches Icon.module.css from design system)
+       ───────────────────────────────────────────────────────────── */
+    .icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: currentColor;
+    }
+    .icon svg { display: block; width: 100%; height: 100%; fill: currentColor; }
+    .icon--xsmall { width: var(--size-icon-xsmall); height: var(--size-icon-xsmall); }
+    .icon--small  { width: var(--size-icon-small);  height: var(--size-icon-small); }
+    .icon--medium { width: var(--size-icon-medium); height: var(--size-icon-medium); }
+
+    /* ─────────────────────────────────────────────────────────────
+       ICON BUTTON  (matches IconButton.module.css from design system)
+       ───────────────────────────────────────────────────────────── */
+    .icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      padding: 0;
+      border-radius: var(--radius-small);
+      border: var(--border-width-thin) solid transparent;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 80ms ease, box-shadow 80ms ease;
+      background: transparent;
+      color: var(--color-text-subtle);
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .icon-btn:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
+    .icon-btn:disabled { opacity: 0.5; pointer-events: none; }
+    .icon-btn--small  { width: var(--size-button-small);  height: var(--size-button-small); }
+    .icon-btn--medium { width: var(--size-button-medium); height: var(--size-button-medium); }
+    .icon-btn--rounded { border-radius: var(--radius-full); }
+
+    /* secondary-subtle */
+    .icon-btn[data-variant="secondary-subtle"]:hover { background: var(--color-bg-default-hover); }
+    .icon-btn[data-variant="secondary-subtle"]:active { box-shadow: inset 0 0 0 2px var(--color-border-active); }
+
+    /* secondary-outlined */
+    .icon-btn[data-variant="secondary-outlined"] {
+      background: var(--color-bg-default);
+      border-color: var(--color-border-default);
+    }
+    .icon-btn[data-variant="secondary-outlined"]:hover { background: var(--color-bg-default-hover); }
+
+    /* ─────────────────────────────────────────────────────────────
+       BUTTON  (matches Button.module.css from design system)
+       ───────────────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-050);
+      padding-inline: var(--space-100);
+      font: var(--font-button);
+      border-radius: var(--radius-small);
+      border: var(--border-width-thin) solid transparent;
+      cursor: pointer;
+      white-space: nowrap;
+      user-select: none;
+      transition: background-color 80ms ease, box-shadow 80ms ease;
+      background: transparent;
+      color: var(--color-text-subtle);
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .btn:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
+    .btn:disabled { opacity: 0.5; pointer-events: none; }
+    .btn--medium { height: var(--size-button-medium); }
+    .btn--small  { height: var(--size-button-small); }
+    .btn--rounded { border-radius: var(--radius-full); padding-inline: 12px; }
+    .btn--icon-left { padding-inline-start: var(--space-050); }
+
+    .btn[data-variant="secondary-subtle"]:hover { background: var(--color-bg-default-hover); }
+    .btn[data-variant="secondary-subtle"]:active { box-shadow: inset 0 0 0 2px var(--color-border-active); }
+
+    /* ─────────────────────────────────────────────────────────────
+       CHAT WINDOW  (456 × 640, matches Figma kai frame)
+       ───────────────────────────────────────────────────────────── */
+    .chat-window {
+      width: 456px;
+      height: 640px;
+      background: var(--color-bg-default);
+      border: 1px solid var(--color-border-default);
+      border-radius: var(--radius-medium);
+      display: flex;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+       SIDEBAR
+       ───────────────────────────────────────────────────────────── */
+    .sidebar {
+      flex-shrink: 0;
+      background: var(--color-bg-system-soft);
+      border-right: 1px solid var(--color-border-default);
+      border-radius: var(--radius-medium) 0 0 var(--radius-medium);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-100);
+      overflow: hidden;
+      width: 40px;
+      transition: width 240ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .sidebar--open { width: 200px; }
+
+    /* Sidebar header row */
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 40px;
+      padding: 0 4px;
+      flex-shrink: 0;
+      gap: 0;
+    }
+    .sidebar--open .sidebar-header { justify-content: space-between; }
+    .sidebar-header-kai {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 0;
+      height: 32px;
+      overflow: hidden;
+      flex-shrink: 0;
+      color: var(--color-text-default);
+      opacity: 0;
+      transition: width 240ms cubic-bezier(0.4,0,0.2,1), opacity 180ms ease;
+    }
+    .sidebar--open .sidebar-header-kai { width: 32px; opacity: 1; }
+    /* .sidebar-header-spacer is no longer used (space-between handles it) */
+
+    /* Nav items */
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: 0 4px;
+      flex-shrink: 0;
+    }
+    .sidebar--open .sidebar-nav {
+      align-items: stretch;
+      padding: 0;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      height: 32px;
+      min-width: 32px;
+      max-width: 32px;
+      gap: 0;
+      border-radius: var(--radius-medium);
+      border: none;
+      background: transparent;
+      color: var(--color-text-system);
+      font: var(--font-body-sm-700);
+      cursor: pointer;
+      transition: background-color 80ms ease, max-width 240ms cubic-bezier(0.4,0,0.2,1);
+      overflow: hidden;
+      text-align: left;
+      padding: 0 8px;
+      flex-shrink: 0;
+      justify-content: flex-start;
+    }
+    .sidebar--open .nav-item {
+      max-width: 200px;
+      width: 100%;
+    }
+    .nav-item:hover { background: var(--color-bg-default-hover); }
+
+    .nav-label {
+      white-space: nowrap;
+      overflow: hidden;
+      max-width: 0;
+      opacity: 0;
+      transition: max-width 240ms cubic-bezier(0.4,0,0.2,1), opacity 180ms ease;
+      padding-left: 0;
+    }
+    .sidebar--open .nav-label {
+      max-width: 140px;
+      opacity: 1;
+      padding-left: 4px;
+    }
+
+    /* Chats section */
+    .chats-section {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+      min-height: 0;
+      opacity: 0;
+      transition: opacity 160ms ease;
+      pointer-events: none;
+    }
+    .sidebar--open .chats-section {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .chats-title {
+      display: flex;
+      align-items: center;
+      height: 32px;
+      padding: 0 8px;
+      font: var(--font-body-sm-700);
+      color: var(--color-text-system);
+      flex-shrink: 0;
+    }
+
+    .chats-list {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+      padding: 0;
+    }
+
+    .chat-item {
+      display: flex;
+      align-items: center;
+      height: 32px;
+      padding: 0 8px;
+      border-radius: var(--radius-medium);
+      cursor: pointer;
+      font: var(--font-body-sm);
+      color: var(--color-text-system);
+      transition: background-color 80ms ease;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .chat-item span { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+    .chat-item:hover { background: var(--color-bg-default-hover); }
+    .chat-item--active {
+      background: var(--color-bg-slate-a10);
+      color: var(--color-text-default);
+      font: var(--font-body-sm);
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+       MAIN CHAT AREA
+       ───────────────────────────────────────────────────────────── */
+    .chat-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    /* Panel header */
+    .panel-header {
+      display: flex;
+      align-items: center;
+      height: 40px;
+      padding: 0 8px;
+      gap: var(--space-050);
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--color-border-default);
+    }
+    .panel-header-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+      color: var(--color-text-default);
+    }
+    .panel-header-title {
+      flex: 1;
+      font: var(--font-body-md-700);
+      color: var(--color-text-default);
+    }
+    .panel-header-actions {
+      display: flex;
+      align-items: center;
+    }
+
+    /* Chat feed */
+    .chat-feed {
+      flex: 1;
+      overflow-y: auto;
+      padding: var(--space-200);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-200);
+      align-items: flex-end;
+      min-height: 0;
+    }
+
+    /* User bubble */
+    .user-bubble {
+      background: var(--color-bg-system-highlight);
+      padding: var(--space-100) var(--space-150);
+      border-radius: var(--radius-large) var(--radius-large) 0 var(--radius-large);
+      font: var(--font-body-sm);
+      color: var(--color-text-default);
+      max-width: 80%;
+      flex-shrink: 0;
+      word-break: break-word;
+      line-height: 1.4;
+    }
+
+    /* Agent response */
+    .agent-response {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-100);
+      padding: var(--space-100);
+      border-radius: var(--radius-large) var(--radius-large) var(--radius-large) 0;
+      width: 100%;
+      flex-shrink: 0;
+      align-self: stretch;
+    }
+    .agent-response-title {
+      font: var(--font-body-sm-700);
+      color: var(--color-text-default);
+      line-height: 1.4;
+    }
+    .agent-response-body {
+      font: var(--font-body-sm);
+      color: var(--color-text-default);
+      line-height: 1.4;
+    }
+
+    /* Response action bar */
+    .response-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      height: 24px;
+    }
+    .action-icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: var(--radius-large);
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: var(--color-text-subtle);
+      transition: background-color 80ms ease;
+      flex-shrink: 0;
+    }
+    .action-icon-btn:hover { background: var(--color-bg-default-hover); }
+    .action-icon-btn:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 1px; }
+
+    /* Input area */
+    .input-area {
+      padding: 0 var(--space-200) var(--space-200);
+      flex-shrink: 0;
+    }
+    .input-box {
+      display: flex;
+      align-items: center;
+      background: var(--color-bg-slate-a10);
+      border: 1px solid var(--color-border-default);
+      border-radius: 24px;
+      padding: var(--space-100);
+      gap: var(--space-050);
+      cursor: text;
+      min-height: 40px;
+    }
+    .input-box-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+      border-radius: var(--radius-large);
+      color: var(--color-text-subtle);
+    }
+    .input-placeholder {
+      flex: 1;
+      font: var(--font-body-md-700);
+      color: var(--color-text-subtle);
+      user-select: none;
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+       TOOLTIP  (matches Figma tooltip spec)
+       ───────────────────────────────────────────────────────────── */
+    .tooltip-anchor {
+      position: relative;
+      display: inline-flex;
+    }
+    .tooltip {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--color-bg-neutral-dark);
+      color: var(--color-text-invert);
+      font: 400 12px/1.3 'Open Sans', sans-serif;
+      padding: 6px 8px;
+      border-radius: var(--radius-small);
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 130ms ease;
+      z-index: 100;
+    }
+    .tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%) translateY(-50%) rotate(45deg);
+      width: 8px;
+      height: 8px;
+      background: var(--color-bg-neutral-dark);
+      border-radius: 1px;
+    }
+    .tooltip-anchor:hover .tooltip { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
+    const { useState, useCallback } = React;
+
+    /* ── Material Symbols SVG paths (24px viewBox) ─────────────── */
+    const P = {
+      edit:      'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z',
+      search:    'M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16a6.47 6.47 0 0 0 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z',
+      attach:    'M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 0 1 5 0v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5a2.5 2.5 0 0 0 5 0V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z',
+      folder:    'M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z',
+      help:      'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z',
+      settings:  'M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7.07 7.07 0 0 0-1.62-.94l-.36-2.54A.484.484 0 0 0 14 3h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87a.49.49 0 0 0 .12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.37 1.04.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z',
+      minimize:  'M6 19h12v2H6z',
+      close:     'M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z',
+      copy:      'M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z',
+      thumbUp:   'M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z',
+      thumbDown: 'M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z',
+      refresh:   'M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z',
+      moreVert:  'M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z',
+      add:       'M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z',
+      // "last_page" = arrow + right bar → expand left panel
+      panelOpen: 'M5.59 7.41L10.18 12l-4.59 4.59L7 18l6-6-6-6-1.41 1.41zM16 6h2v12h-2V6z',
+      // "first_page" = left bar + arrow → collapse left panel
+      panelClose:'M18.41 16.59L13.82 12l4.59-4.59L17 6l-6 6 6 6 1.41-1.41zM6 6h2v12H6V6z',
+    };
+
+    /* ── KAI icon: 6-arm asterisk (approximates the KAI-45 Figma icon) ── */
+    function KaiIcon({ size = 20 }) {
+      const c = size / 2;
+      const arm = size * 0.38;
+      const w   = size * 0.12;
+      const r   = w / 2;
+      const rects = [0, 45, 90, 135].map(deg => (
+        <rect
+          key={deg}
+          x={c - w / 2}
+          y={c - arm}
+          width={w}
+          height={arm * 2}
+          rx={r}
+          transform={`rotate(${deg} ${c} ${c})`}
+        />
+      ));
+      return (
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} fill="currentColor">
+          {rects}
+        </svg>
+      );
+    }
+
+    /* ── Svg Icon helper ─────────────────────────────────────────── */
+    function SvgIcon({ path, size = 16 }) {
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+          <path d={path} />
+        </svg>
+      );
+    }
+
+    /* ── Design-system Icon wrapper ──────────────────────────────── */
+    function Icon({ path, size = 'xsmall', label }) {
+      return (
+        <span
+          className={`icon icon--${size}`}
+          aria-label={label}
+          aria-hidden={!label}
+        >
+          <SvgIcon path={path} size={size === 'xsmall' ? 16 : size === 'small' ? 20 : 24} />
+        </span>
+      );
+    }
+
+    /* ── Design-system IconButton ─────────────────────────────────── */
+    function IconButton({
+      path,
+      label,
+      size = 'medium',
+      variant = 'secondary-subtle',
+      rounded = true,
+      onClick,
+      className = '',
+      active = false,
+    }) {
+      const iconPx = size === 'small' ? 16 : 16;
+      return (
+        <button
+          type="button"
+          className={`icon-btn icon-btn--${size} ${rounded ? 'icon-btn--rounded' : ''} ${className}`}
+          data-variant={variant}
+          aria-label={label}
+          title={label}
+          onClick={onClick}
+          style={active ? { background: 'var(--color-bg-default-hover)' } : undefined}
+        >
+          <span className={`icon icon--xsmall`}>
+            <SvgIcon path={path} size={iconPx} />
+          </span>
+        </button>
+      );
+    }
+
+    /* ── Design-system Button ─────────────────────────────────────── */
+    function Button({ children, iconLeft, variant = 'secondary-subtle', size = 'medium', rounded = false, onClick }) {
+      return (
+        <button
+          type="button"
+          className={`btn btn--${size} ${rounded ? 'btn--rounded' : ''} ${iconLeft ? 'btn--icon-left' : ''}`}
+          data-variant={variant}
+          onClick={onClick}
+        >
+          {iconLeft && <span className="icon icon--xsmall"><SvgIcon path={iconLeft} size={16} /></span>}
+          {children}
+        </button>
+      );
+    }
+
+    /* ── Tooltip wrapper ─────────────────────────────────────────── */
+    function WithTooltip({ tip, children }) {
+      return (
+        <span className="tooltip-anchor">
+          {children}
+          <span className="tooltip" role="tooltip">{tip}</span>
+        </span>
+      );
+    }
+
+    /* ── NavItem ─────────────────────────────────────────────────── */
+    function NavItem({ iconPath, label }) {
+      return (
+        <button type="button" className="nav-item" title={label}>
+          <span className="icon icon--xsmall" style={{ flexShrink: 0 }}>
+            <SvgIcon path={iconPath} size={16} />
+          </span>
+          <span className="nav-label">{label}</span>
+        </button>
+      );
+    }
+
+    /* ── ChatItem ─────────────────────────────────────────────────── */
+    function ChatItem({ label, active }) {
+      return (
+        <div className={`chat-item ${active ? 'chat-item--active' : ''}`} role="button" tabIndex={0}>
+          <span>{label}</span>
+        </div>
+      );
+    }
+
+    /* ── Agent message ───────────────────────────────────────────── */
+    function AgentMessage({ title, body }) {
+      const actions = [
+        { path: P.copy,      label: 'Copy' },
+        { path: P.thumbUp,   label: 'Good response' },
+        { path: P.thumbDown, label: 'Poor response' },
+        { path: P.refresh,   label: 'Regenerate' },
+        { path: P.moreVert,  label: 'More options' },
+      ];
+      return (
+        <div className="agent-response">
+          <div className="agent-response-title">{title}</div>
+          <div className="agent-response-body">{body}</div>
+          <div className="response-actions">
+            {actions.map(({ path, label }) => (
+              <button key={label} type="button" className="action-icon-btn" aria-label={label} title={label}>
+                <SvgIcon path={path} size={14} />
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    /* ── User message ────────────────────────────────────────────── */
+    function UserMessage({ text }) {
+      return <div className="user-bubble">{text}</div>;
+    }
+
+    /* ── Sidebar ─────────────────────────────────────────────────── */
+    function Sidebar({ open, onToggle }) {
+      const navItems = [
+        { path: P.edit,   label: 'New Chat' },
+        { path: P.search, label: 'Search Chats' },
+        { path: P.attach, label: 'Attachments' },
+        { path: P.folder, label: 'Projects' },
+      ];
+
+      return (
+        <aside className={`sidebar ${open ? 'sidebar--open' : ''}`} aria-label="Chat sidebar">
+          {/* Header */}
+          <div className="sidebar-header">
+            <div className="sidebar-header-kai" aria-hidden="true">
+              <KaiIcon size={18} />
+            </div>
+            <WithTooltip tip={open ? 'Close Sidebar' : 'Open Sidebar'}>
+              <IconButton
+                path={open ? P.panelClose : P.panelOpen}
+                label={open ? 'Close Sidebar' : 'Open Sidebar'}
+                variant="secondary-subtle"
+                rounded={false}
+                onClick={onToggle}
+              />
+            </WithTooltip>
+          </div>
+
+          {/* Nav items */}
+          <nav className="sidebar-nav">
+            {navItems.map(({ path, label }) => (
+              <NavItem key={label} iconPath={path} label={label} />
+            ))}
+          </nav>
+
+          {/* Chats section (visible when open) */}
+          <div className="chats-section" aria-hidden={!open}>
+            <div className="chats-title">Chats</div>
+            <div className="chats-list">
+              <ChatItem label="Alpha Thread"  active={true} />
+              <ChatItem label="Gamma Thread"  active={false} />
+              <ChatItem label="Omega Thread"  active={false} />
+            </div>
+          </div>
+        </aside>
+      );
+    }
+
+    /* ── Main chat window ────────────────────────────────────────── */
+    function AIChatWindow() {
+      const [sidebarOpen, setSidebarOpen] = useState(false);
+      const toggleSidebar = useCallback(() => setSidebarOpen(v => !v), []);
+
+      const messages = [
+        { type: 'user',  text: 'Some prompt entered by user' },
+        { type: 'agent', title: "Here's a response from the agent", body: 'The action you requested has been completed. Consider this follow-up action that I can also perform.' },
+        { type: 'user',  text: 'Some prompt entered by user' },
+        { type: 'agent', title: "Here's a response from the agent", body: 'The action you requested has been completed. Consider this follow-up action that I can also perform.' },
+        { type: 'user',  text: 'Some prompt entered by user' },
+        { type: 'agent', title: "Here's a response from the agent", body: 'The action you requested has been completed. Consider this follow-up action that I can also perform.' },
+      ];
+
+      return (
+        <div className="chat-window" role="dialog" aria-label="AI Chat">
+          {/* Left sidebar */}
+          <Sidebar open={sidebarOpen} onToggle={toggleSidebar} />
+
+          {/* Main area */}
+          <main className="chat-main">
+            {/* Header */}
+            <header className="panel-header">
+              <div className="panel-header-logo" aria-hidden="true">
+                <KaiIcon size={20} />
+              </div>
+              <h1 className="panel-header-title">AI</h1>
+              <div className="panel-header-actions">
+                <WithTooltip tip="Help">
+                  <IconButton path={P.help}     label="Help"     variant="secondary-subtle" />
+                </WithTooltip>
+                <WithTooltip tip="Settings">
+                  <IconButton path={P.settings} label="Settings" variant="secondary-subtle" />
+                </WithTooltip>
+                <WithTooltip tip="Minimize">
+                  <IconButton path={P.minimize} label="Minimize" variant="secondary-subtle" />
+                </WithTooltip>
+                <WithTooltip tip="Close">
+                  <IconButton path={P.close}    label="Close"    variant="secondary-subtle" />
+                </WithTooltip>
+              </div>
+            </header>
+
+            {/* Chat feed */}
+            <div className="chat-feed" role="log" aria-live="polite">
+              {messages.map((msg, i) =>
+                msg.type === 'user'
+                  ? <UserMessage key={i} text={msg.text} />
+                  : <AgentMessage key={i} title={msg.title} body={msg.body} />
+              )}
+            </div>
+
+            {/* Input */}
+            <div className="input-area">
+              <div className="input-box" role="button" tabIndex={0} aria-label="Ask Agent">
+                <span className="input-box-icon" aria-hidden="true">
+                  <SvgIcon path={P.add} size={20} />
+                </span>
+                <span className="input-placeholder">Ask Agent</span>
+              </div>
+            </div>
+          </main>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<AIChatWindow />);
+  </script>
+</body>
+</html>
