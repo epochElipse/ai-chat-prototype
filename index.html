@@ -477,7 +477,6 @@
        ───────────────────────────────────────────────────────────── */
     .tooltip {
       position: fixed;
-      transform: translate(0, -50%);
       background: var(--color-bg-neutral-dark);
       color: var(--color-text-invert);
       font: 400 12px/1.3 'Open Sans', sans-serif;
@@ -490,14 +489,18 @@
     .tooltip::after {
       content: '';
       position: absolute;
-      top: 50%;
-      left: 0;
-      transform: translateX(-50%) translateY(-50%) rotate(45deg);
       width: 8px;
       height: 8px;
       background: var(--color-bg-neutral-dark);
       border-radius: 1px;
+      transform: translateX(-50%) translateY(-50%) rotate(45deg);
     }
+    /* above the element */
+    .tooltip--top    { transform: translate(-50%, -100%); }
+    .tooltip--top::after { top: 100%; left: 50%; }
+    /* right of the element */
+    .tooltip--right  { transform: translate(0, -50%); }
+    .tooltip--right::after { top: 50%; left: 0; }
   </style>
 </head>
 <body>
@@ -585,16 +588,20 @@
     }
 
     /* ── Tooltip overlay via React portal ────────────────────────── */
-    function WithTooltip({ tip, children }) {
+    function WithTooltip({ tip, children, placement = 'top' }) {
       const [pos, setPos] = useState(null);
       const triggerRef = useRef(null);
 
       const show = useCallback(() => {
         if (triggerRef.current) {
           const r = triggerRef.current.getBoundingClientRect();
-          setPos({ x: r.right + 8, y: r.top + r.height / 2 });
+          setPos(
+            placement === 'right'
+              ? { x: r.right + 8, y: r.top + r.height / 2 }
+              : { x: r.left + r.width / 2, y: r.top - 8 }
+          );
         }
-      }, []);
+      }, [placement]);
 
       const hide = useCallback(() => setPos(null), []);
 
@@ -610,7 +617,7 @@
           </span>
           {pos && createPortal(
             <div
-              className="tooltip"
+              className={`tooltip tooltip--${placement}`}
               role="tooltip"
               style={{ left: pos.x, top: pos.y }}
             >
@@ -630,7 +637,7 @@
           <span className="nav-label">{label}</span>
         </button>
       );
-      return showTooltip ? <WithTooltip tip={label}>{btn}</WithTooltip> : btn;
+      return showTooltip ? <WithTooltip tip={label} placement="right">{btn}</WithTooltip> : btn;
     }
 
     /* ── ChatItem ─────────────────────────────────────────────────── */
